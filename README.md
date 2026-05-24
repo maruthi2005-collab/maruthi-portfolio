@@ -2,6 +2,7 @@
 
 A premium, highly interactive, and minimalist portfolio website showcasing core competencies in **Computer Science, Data Science, Machine Learning, and Generative AI**.
 
+Live website: [https://maruthi-portfolio-nine.vercel.app/](https://maruthi-portfolio-nine.vercel.app/)
 Live repository: [https://github.com/maruthi2005-collab/maruthi-portfolio](https://github.com/maruthi2005-collab/maruthi-portfolio)
 
 ---
