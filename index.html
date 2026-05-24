@@ -125,6 +125,43 @@
       background: linear-gradient(to bottom, rgba(255,255,255,0.9) 0%, transparent 100%);
       pointer-events: none; z-index: -1;
     }
+    .nav-brand-container {
+      display: flex;
+      align-items: center;
+      gap: 1.2rem;
+      z-index: 110;
+    }
+    .menu-toggle-btn {
+      display: none; /* Hidden on desktop */
+      flex-direction: column;
+      justify-content: space-between;
+      width: 20px;
+      height: 14px;
+      background: transparent;
+      border: none;
+      cursor: pointer;
+      padding: 0;
+      z-index: 115;
+      outline: none;
+    }
+    .menu-toggle-btn .bar {
+      width: 100%;
+      height: 1.5px;
+      background-color: var(--text);
+      transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+      transform-origin: center;
+    }
+    /* Hamburger to X close icon transition animations */
+    .menu-toggle-btn.open .bar-1 {
+      transform: translateY(6.25px) rotate(45deg);
+    }
+    .menu-toggle-btn.open .bar-2 {
+      opacity: 0;
+      transform: scaleX(0);
+    }
+    .menu-toggle-btn.open .bar-3 {
+      transform: translateY(-6.25px) rotate(-45deg);
+    }
     .nav-logo {
       font-family: var(--serif);
       font-size: 1.25rem;
@@ -968,9 +1005,63 @@
 
     /* ── RESPONSIVE ── */
     @media (max-width: 900px) {
-      nav { padding: 1.5rem 1.5rem; }
-      .nav-links { gap: 1.5rem; }
-      #hero { padding: 0 1.5rem 3rem; }
+      nav { 
+        padding: 1.5rem 1.5rem; 
+        background: rgba(255, 255, 255, 0.8);
+        backdrop-filter: blur(12px);
+        -webkit-backdrop-filter: blur(12px);
+        border-bottom: 1px solid var(--border);
+      }
+      
+      .menu-toggle-btn {
+        display: flex; /* Show on mobile */
+      }
+      
+      /* Mobile Menu Container */
+      .nav-links {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100vh;
+        background: rgba(255, 255, 255, 0.98);
+        backdrop-filter: blur(20px);
+        -webkit-backdrop-filter: blur(20px);
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        gap: 3rem;
+        z-index: 105;
+        padding: 2rem;
+        list-style: none;
+        
+        /* Slide & Fade Down transition */
+        transform: translateY(-100%);
+        opacity: 0;
+        transition: transform 0.5s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.5s ease;
+        pointer-events: none;
+      }
+      
+      .nav-links.open {
+        transform: translateY(0);
+        opacity: 1;
+        pointer-events: auto;
+      }
+      
+      .nav-links a {
+        font-size: 1.6rem; /* Larger, tappable mobile text */
+        letter-spacing: 0.2em;
+        font-weight: 300;
+        font-family: var(--serif);
+        color: var(--text);
+      }
+      
+      /* Lock background scrolling when menu drawer is open */
+      body.menu-open {
+        overflow: hidden;
+      }
+      
+      #hero { padding: 6rem 1.5rem 3rem; }
       #about { grid-template-columns: 1fr; gap: 2rem; padding: 6rem 1.5rem; }
       #resume { grid-template-columns: 1fr; gap: 3.5rem; padding: 6rem 1.5rem; }
       .resume-left { position: static; }
@@ -1029,11 +1120,18 @@
 
   <!-- Navigation -->
   <nav>
-    <a href="#hero" class="nav-logo">B.MARUTHI</a>
-    <ul class="nav-links">
+    <div class="nav-brand-container">
+      <button id="menu-toggle" class="menu-toggle-btn" aria-label="Toggle Mobile Menu">
+        <span class="bar bar-1"></span>
+        <span class="bar bar-2"></span>
+        <span class="bar bar-3"></span>
+      </button>
+      <a href="#hero" class="nav-logo">B.MARUTHI</a>
+    </div>
+    <ul class="nav-links" id="nav-links">
       <li><a href="#about">About</a></li>
       <li><a href="#resume">Resume</a></li>
-      <li><a href="#work">Work</a></li>
+      <li><a href="#work">Projects</a></li>
       <li><a href="#skills">Skills</a></li>
       <li><a href="#contact">Contact</a></li>
     </ul>
@@ -1514,11 +1612,28 @@
       submitBtn.innerHTML = '<span>Writing Stream...</span>';
       submitBtn.style.opacity = '0.7';
       
-      setTimeout(() => {
-        const mailSubject = encodeURIComponent(`Collaboration Inquiry from ${name}`);
-        const mailBody = encodeURIComponent(`Hi Maruthi,\n\n${message}\n\nBest regards,\n${name}\nEmail: ${email}`);
-        const gmailUrl = `https://mail.google.com/mail/?view=cm&fs=1&to=boyamaruthi2005@gmail.com&su=${mailSubject}&body=${mailBody}`;
-        
+      // Submit via AJAX to FormSubmit.co
+      fetch("https://formsubmit.co/ajax/boyamaruthi2005@gmail.com", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Accept": "application/json"
+        },
+        body: JSON.stringify({
+          Name: name,
+          Email: email,
+          Message: message,
+          _subject: `New Portfolio Inquiry from ${name}`
+        })
+      })
+      .then(response => {
+        if (response.ok) {
+          return response.json();
+        } else {
+          throw new Error("Form submission failed");
+        }
+      })
+      .then(data => {
         // Hide form, show success checkmark
         form.style.display = 'none';
         successCard.style.display = 'flex';
@@ -1528,11 +1643,40 @@
         document.querySelectorAll('.topic-chip').forEach(chip => chip.classList.remove('active'));
         const badge = document.getElementById('preset-badge');
         if (badge) badge.style.display = 'none';
+      })
+      .catch(error => {
+        console.error("Submission error:", error);
+        // Re-enable submit button so user can try again
+        submitBtn.disabled = false;
+        submitBtn.innerHTML = '<span>Submit Message</span>';
+        submitBtn.style.opacity = '1';
         
-        // Open Gmail pre-populated in a new tab
-        window.open(gmailUrl, '_blank');
-      }, 1000);
+        // Premium fallback popup
+        alert("Oops! Something went wrong with the connection. Please try again or email me directly at boyamaruthi2005@gmail.com");
+      });
     }
+
+    // ── MOBILE MENU CONTROLLER ──
+    const menuToggle = document.getElementById('menu-toggle');
+    const navLinks = document.getElementById('nav-links');
+    const navLinksList = document.querySelectorAll('.nav-links a');
+
+    function toggleMenu() {
+      const isOpen = menuToggle.classList.toggle('open');
+      navLinks.classList.toggle('open', isOpen);
+      document.body.classList.toggle('menu-open', isOpen);
+    }
+
+    menuToggle.addEventListener('click', toggleMenu);
+
+    // Auto-close menu when clicking any section link
+    navLinksList.forEach(link => {
+      link.addEventListener('click', () => {
+        menuToggle.classList.remove('open');
+        navLinks.classList.remove('open');
+        document.body.classList.remove('menu-open');
+      });
+    });
   </script>
 </body>
 </html>
